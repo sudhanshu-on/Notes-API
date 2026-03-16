@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.route.js";
 import notesRoutes from "./routes/notes.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import { apiLimiter } from "./middlewares/ratelimiter.middleware.js";
+import cors from "cors";
 
 dotenv.config();
 
@@ -12,7 +13,11 @@ connectDB();
 
 const app = express();
 
+
 app.use(express.json());
+app.use(cors({
+  origin: process.env.ORIGIN || "http://localhost:5173",
+}));
 app.use(apiLimiter);
 
 app.get("/", (req, res) => {
