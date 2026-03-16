@@ -1,72 +1,66 @@
 import Note from "../models/notes.model.js";
+import asyncHandler from "express-async-handler";
+import ApiError from "../utils/apiError.utils.js";
+import ApiResponse from "../utils/apiResponse.utils.js";
 
-const createNote = async (req, res) => {
-  try {
-    const { title, content } = req.body;
+const createNote = asyncHandler(async (req, res) => {
+  const { title, content } = req.body;
 
-    const note = await Note.create({
-      title,
-      content,
+  const note = await Note.create({
+    title,
+    content,
+    user: req.user,
+  });
+
+  res.status(201).json(new ApiResponse(true, note, "Note created successfully"));
+});
+
+const getNotes = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const total = await Note.countDocuments({ user: req.user });
+
+  const notes = await Note.find({ user: req.user })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  res.json(new ApiResponse(true, { notes, total, page, limit }, "Notes retrieved successfully"));
+});
+
+const updateNote = asyncHandler(async (req, res) => {
+  const updatedNote = await Note.findOneAndUpdate(
+    {
+      _id: req.params.id,
       user: req.user,
-    });
+    },
+    {
+      $set: { title, content },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
 
-    res.status(201).json(note);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
+  if (!updatedNote) {
+    return res.status(404).json({
+      message: "Note not found or not authorized",
     });
   }
-};
 
-const getNotes = async (req, res) => {
-  try {
-    const notes = await Note.find({ user: req.user }).sort({ createdAt: -1 });
-    res.json(notes);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
+  return res.json(new ApiResponse(true, updatedNote, "Note updated successfully"));
+});
 
-const updateNote = async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id);
-    if (!note) {
-      return res.status(404).json({ message: "Note not found" });
-    }
-    
-    if (note.user.toString() !== req.user) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-    const { title, content } = req.body;
-    note.title = title || note.title;
-    note.content = content || note.content;
-    await note.save();
-    res.json(note);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+const deleteNote = asyncHandler(async (req, res) => {
+  const note = await Note.findById(req.params.id);
+  if (!note) {
+    throw new ApiError("Note not found", 404);
   }
-};
-
-const deleteNote = async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id);
-    if (!note) {
-      return res.status(404).json({ message: "Note not found" });
-    }
-    if (note.user.toString() !== req.user) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-    await Note.findByIdAndDelete(req.params.id);
-    res.json({ message: "Note deleted successfully" });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+  if (note.user.toString() !== req.user) {
+    throw new ApiError("Not authorized", 401);
   }
-};
+  await Note.findByIdAndDelete(req.params.id);
+  res.json(new ApiResponse(true, null, "Note deleted successfully"));
+});
 
 export { createNote, getNotes, updateNote, deleteNote };

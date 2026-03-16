@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.config.js";
 import authRoutes from "./routes/auth.route.js";
 import notesRoutes from "./routes/notes.route.js";
+import errorHandler from "./middlewares/error.middleware.js";
+import { apiLimiter } from "./middlewares/ratelimiter.middleware.js";
 
 dotenv.config();
 
@@ -11,6 +13,7 @@ connectDB();
 const app = express();
 
 app.use(express.json());
+app.use(apiLimiter);
 
 app.get("/", (req, res) => {
   res.send("API running");
@@ -18,6 +21,8 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", notesRoutes);
+
+app.use(errorHandler); //always after routes
 
 const PORT = process.env.PORT || 5000;
 
