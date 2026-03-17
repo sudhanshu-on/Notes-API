@@ -12,7 +12,9 @@ const createNote = asyncHandler(async (req, res) => {
     user: req.user,
   });
 
-  res.status(201).json(new ApiResponse(true, note, "Note created successfully"));
+  res
+    .status(201)
+    .json(new ApiResponse(true, note, "Note created successfully"));
 });
 
 const getNotes = asyncHandler(async (req, res) => {
@@ -25,7 +27,13 @@ const getNotes = asyncHandler(async (req, res) => {
     .limit(limit)
     .sort({ createdAt: -1 });
 
-  res.json(new ApiResponse(true, { notes, total, page, limit }, "Notes retrieved successfully"));
+  res.json(
+    new ApiResponse(
+      true,
+      { notes, total, page, limit },
+      "Notes retrieved successfully",
+    ),
+  );
 });
 
 const updateNote = asyncHandler(async (req, res) => {
@@ -35,7 +43,10 @@ const updateNote = asyncHandler(async (req, res) => {
       user: req.user,
     },
     {
-      $set: { title, content },
+      $set: {
+        title: req.body.title,
+        content: req.body.content,
+      },
     },
     {
       returnDocument: "after",
@@ -48,7 +59,9 @@ const updateNote = asyncHandler(async (req, res) => {
     });
   }
 
-  return res.json(new ApiResponse(true, updatedNote, "Note updated successfully"));
+  return res.json(
+    new ApiResponse(true, updatedNote, "Note updated successfully"),
+  );
 });
 
 const deleteNote = asyncHandler(async (req, res) => {
