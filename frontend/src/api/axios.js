@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://notes-api-production-cd96.up.railway.app/api",
+  baseURL: "https://notes-api-production-e602.up.railway.app/api",
 });
 
 // We add an "interceptor" to automatically attach the token if it exists
