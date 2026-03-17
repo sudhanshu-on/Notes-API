@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
 const PAGE_SIZE = 6;
+const NOTE_TITLE_MIN_LENGTH = 3;
+const NOTE_CONTENT_MIN_LENGTH = 5;
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -29,9 +31,57 @@ function Dashboard() {
 
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState({ type: '', message: '' });
+  const [profile, setProfile] = useState(null);
   const [pendingDeleteNote, setPendingDeleteNote] = useState(null);
 
-  const fetchNotes = async (requestedPage = 1, { showLoader = true } = {}) => {
+  const logoutAndRedirect = useCallback(async (
+    notice = { type: 'success', message: 'Logged out successfully.' },
+  ) => {
+    try {
+      await API.post('/auth/logout');
+    } catch {
+      // Ignore logout API errors and clear local session anyway.
+    }
+
+    localStorage.removeItem('token');
+    if (notice?.message) {
+      sessionStorage.setItem('auth_notice', JSON.stringify(notice));
+    }
+    navigate('/', { replace: true });
+  }, [navigate]);
+
+  const handleUnauthorized = useCallback(async (err) => {
+    if (err?.response?.status !== 401) {
+      return false;
+    }
+
+    await logoutAndRedirect({
+      type: 'error',
+      message: 'Session expired. Please log in again.',
+    });
+    return true;
+  }, [logoutAndRedirect]);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const { data } = await API.get('/auth/profile');
+      const incomingProfile = data?.data || null;
+      setProfile(incomingProfile);
+      return incomingProfile;
+    } catch (err) {
+      if (await handleUnauthorized(err)) {
+        return null;
+      }
+
+      setStatus({
+        type: 'error',
+        message: err?.response?.data?.message || 'Could not load your profile.',
+      });
+      return null;
+    }
+  }, [handleUnauthorized]);
+
+  const fetchNotes = useCallback(async (requestedPage = 1, { showLoader = true } = {}) => {
     try {
       if (showLoader) {
         setLoadingPage(requestedPage);
@@ -62,6 +112,10 @@ function Dashboard() {
         totalPages,
       };
     } catch (err) {
+      if (await handleUnauthorized(err)) {
+        return null;
+      }
+
       setStatus({
         type: 'error',
         message: err?.response?.data?.message || 'Could not fetch your notes.',
@@ -73,7 +127,7 @@ function Dashboard() {
         setIsFetching(false);
       }
     }
-  };
+  }, [handleUnauthorized]);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -81,8 +135,18 @@ function Dashboard() {
       return;
     }
 
-    fetchNotes(1);
-  }, [navigate]);
+    const bootstrapDashboard = async () => {
+      await fetchProfile();
+
+      if (!localStorage.getItem('token')) {
+        return;
+      }
+
+      await fetchNotes(1);
+    };
+
+    bootstrapDashboard();
+  }, [navigate, fetchNotes, fetchProfile]);
 
   const addNote = async (event) => {
     event.preventDefault();
@@ -93,6 +157,22 @@ function Dashboard() {
 
     if (!title || !content) {
       setStatus({ type: 'error', message: 'Both title and content are required.' });
+      return;
+    }
+
+    if (title.length < NOTE_TITLE_MIN_LENGTH) {
+      setStatus({
+        type: 'error',
+        message: `Title must be at least ${NOTE_TITLE_MIN_LENGTH} characters long.`,
+      });
+      return;
+    }
+
+    if (content.length < NOTE_CONTENT_MIN_LENGTH) {
+      setStatus({
+        type: 'error',
+        message: `Content must be at least ${NOTE_CONTENT_MIN_LENGTH} characters long.`,
+      });
       return;
     }
 
@@ -109,6 +189,10 @@ function Dashboard() {
       setStatus({ type: 'success', message: 'New note added. Showing page 1.' });
       await fetchNotes(1, { showLoader: true });
     } catch (err) {
+      if (await handleUnauthorized(err)) {
+        return;
+      }
+
       setStatus({
         type: 'error',
         message: err?.response?.data?.message || 'Could not add note.',
@@ -144,6 +228,22 @@ function Dashboard() {
       return;
     }
 
+    if (title.length < NOTE_TITLE_MIN_LENGTH) {
+      setStatus({
+        type: 'error',
+        message: `Updated title must be at least ${NOTE_TITLE_MIN_LENGTH} characters long.`,
+      });
+      return;
+    }
+
+    if (content.length < NOTE_CONTENT_MIN_LENGTH) {
+      setStatus({
+        type: 'error',
+        message: `Updated content must be at least ${NOTE_CONTENT_MIN_LENGTH} characters long.`,
+      });
+      return;
+    }
+
     try {
       setActiveActionId(editId);
 
@@ -156,6 +256,10 @@ function Dashboard() {
       setStatus({ type: 'success', message: 'Note updated. Showing page 1 with latest updates first.' });
       await fetchNotes(1, { showLoader: true });
     } catch (err) {
+      if (await handleUnauthorized(err)) {
+        return;
+      }
+
       setStatus({
         type: 'error',
         message: err?.response?.data?.message || 'Could not update note.',
@@ -201,6 +305,10 @@ function Dashboard() {
         await fetchNotes(result.page - 1, { showLoader: true });
       }
     } catch (err) {
+      if (await handleUnauthorized(err)) {
+        return;
+      }
+
       setStatus({
         type: 'error',
         message: err?.response?.data?.message || 'Could not delete note.',
@@ -210,9 +318,11 @@ function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+  const handleLogout = async () => {
+    await logoutAndRedirect({
+      type: 'success',
+      message: 'Logged out successfully.',
+    });
   };
 
   const handlePageChange = async (nextPage) => {
@@ -281,6 +391,14 @@ function Dashboard() {
               <p className="mt-2 max-w-xl text-sm text-slate-600 sm:text-base">
                 Capture ideas, keep everything organized, and edit quickly whenever your thoughts evolve.
               </p>
+
+              {profile ? (
+                <div className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-2xl border border-white/80 bg-white/80 px-3 py-2 text-sm text-slate-700">
+                  <span className="font-semibold text-slate-900">{profile.name || profile.username}</span>
+                  {profile.username ? <span className="text-slate-500">@{profile.username}</span> : null}
+                  {profile.email ? <span className="text-slate-500">{profile.email}</span> : null}
+                </div>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

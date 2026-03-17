@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
@@ -9,12 +9,40 @@ function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [authNotice, setAuthNotice] = useState({ type: '', message: '' });
   const registrationSuccess = location.state?.registered;
   const registeredEmail = location.state?.email;
+
+  useEffect(() => {
+    const rawNotice = sessionStorage.getItem('auth_notice');
+
+    if (!rawNotice) {
+      return;
+    }
+
+    sessionStorage.removeItem('auth_notice');
+
+    try {
+      const parsedNotice = JSON.parse(rawNotice);
+      if (parsedNotice?.message) {
+        setAuthNotice({
+          type: parsedNotice.type === 'error' ? 'error' : 'success',
+          message: parsedNotice.message,
+        });
+        return;
+      }
+    } catch {
+      setAuthNotice({ type: 'success', message: rawNotice });
+      return;
+    }
+
+    setAuthNotice({ type: 'success', message: rawNotice });
+  }, []);
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setError('');
+    setAuthNotice({ type: '', message: '' });
 
     if (!email.trim() || !password.trim()) {
       setError('Enter both email and password.');
@@ -121,6 +149,11 @@ function Login() {
             </div>
 
             {error ? <div className="status-banner status-error">{error}</div> : null}
+            {authNotice.message ? (
+              <div className={`status-banner ${authNotice.type === 'error' ? 'status-error' : 'status-success'}`}>
+                {authNotice.message}
+              </div>
+            ) : null}
             {registrationSuccess ? (
               <div className="status-banner status-success">
                 Account created{registeredEmail ? ` for ${registeredEmail}` : ''}. Please log in.
