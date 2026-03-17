@@ -13,6 +13,24 @@ connectDB();
 
 const app = express();
 
+const getTrustProxySetting = () => {
+  const rawValue = process.env.TRUST_PROXY;
+
+  // Use 1 proxy in production by default so req.ip works correctly behind a load balancer.
+  if (!rawValue) {
+    return process.env.NODE_ENV === "production" ? 1 : false;
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+
+  const asNumber = Number(normalized);
+  return Number.isNaN(asNumber) ? rawValue : asNumber;
+};
+
+app.set("trust proxy", getTrustProxySetting());
 
 app.use(express.json());
 app.use(cors({
