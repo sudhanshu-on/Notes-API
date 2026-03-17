@@ -1,36 +1,131 @@
 import { useState } from 'react';
-import API from '../api/axios';
 import { useNavigate } from 'react-router-dom';
-
+import API from '../api/axios';
 
 function Login() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    if (!email.trim() || !password.trim()) {
+      setError('Enter both email and password.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const { data } = await API.post('/auth/login', { email, password });
-      localStorage.setItem('token', data.data.token); // Store the JWT
-      navigate('/dashboard'); // Redirect to dashboard
+      const { data } = await API.post('/auth/login', {
+        email: email.trim(),
+        password,
+      });
+
+      localStorage.setItem('token', data?.data?.token);
+      navigate('/dashboard');
     } catch (err) {
-      alert('Login failed');
+      setError(err?.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <h2>Login</h2>
-      <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-      <button type="submit">Login</button>
-    </form>
+    <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-10">
+      <div className="pointer-events-none absolute -top-8 right-10 h-36 w-36 rounded-full bg-orange-300/40 blur-3xl float-slow" />
+      <div
+        className="pointer-events-none absolute bottom-6 left-8 h-32 w-32 rounded-full bg-teal-300/40 blur-3xl float-slow"
+        style={{ animationDelay: '1.5s' }}
+      />
+
+      <div className="mx-auto grid max-w-6xl items-center gap-8 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="panel-surface reveal-up hidden p-8 lg:block">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">
+            Notes API Workspace
+          </p>
+          <h1 className="font-display mt-3 text-5xl leading-tight text-slate-900">
+            Turn quick thoughts into clear action.
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
+            Keep personal notes in one focused space with a clean workflow for writing,
+            editing, and reviewing.
+          </p>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                Fast Capture
+              </p>
+              <p className="mt-2 text-sm text-slate-700">Create notes instantly and stay in flow.</p>
+            </div>
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                Smart Editing
+              </p>
+              <p className="mt-2 text-sm text-slate-700">Update your ideas as they evolve.</p>
+            </div>
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                Always Yours
+              </p>
+              <p className="mt-2 text-sm text-slate-700">Private access with secure token auth.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel-surface reveal-up p-6 sm:p-8 lg:p-10" style={{ animationDelay: '0.08s' }}>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600">Welcome back</p>
+          <h2 className="font-display mt-2 text-4xl text-slate-900">Sign in</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Access your notes and continue where you left off.
+          </p>
+
+          <form onSubmit={handleLogin} className="mt-8 space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="input-field"
+                autoComplete="email"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                className="input-field"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+
+            {error ? <div className="status-banner status-error">{error}</div> : null}
+
+            <button type="submit" className="primary-btn w-full" disabled={loading}>
+              {loading ? 'Signing in...' : 'Login to Dashboard'}
+            </button>
+          </form>
+        </section>
+      </div>
+    </div>
   );
 }
 

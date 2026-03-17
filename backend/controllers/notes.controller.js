@@ -18,14 +18,14 @@ const createNote = asyncHandler(async (req, res) => {
 });
 
 const getNotes = asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10));
   const total = await Note.countDocuments({ user: req.user });
 
   const notes = await Note.find({ user: req.user })
+    .sort({ updatedAt: -1, _id: -1 })
     .skip((page - 1) * limit)
-    .limit(limit)
-    .sort({ createdAt: -1 });
+    .limit(limit);
 
   res.json(
     new ApiResponse(
@@ -46,6 +46,7 @@ const updateNote = asyncHandler(async (req, res) => {
       $set: {
         title: req.body.title,
         content: req.body.content,
+        updatedAt: new Date(),
       },
     },
     {

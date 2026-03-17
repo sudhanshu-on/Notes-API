@@ -1,3 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--bg-start: #fff6ea;
+	--bg-mid: #eef9ff;
+	--bg-end: #eafcf4;
+	--text-main: #102138;
+	--text-soft: #4a5b72;
+	--accent: #f97316;
+	--accent-deep: #ea580c;
+	--teal: #0f766e;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	font-family: 'Manrope', sans-serif;
+	color: var(--text-main);
+	background:
+		radial-gradient(circle at 15% 18%, rgba(251, 191, 36, 0.22), transparent 42%),
+		radial-gradient(circle at 85% 12%, rgba(20, 184, 166, 0.2), transparent 35%),
+		linear-gradient(125deg, var(--bg-start), var(--bg-mid) 52%, var(--bg-end));
+}
+
+body::before,
+body::after {
+	content: '';
+	position: fixed;
+	z-index: -1;
+	border-radius: 9999px;
+	filter: blur(45px);
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+body::before {
+	width: 16rem;
+	height: 16rem;
+	right: -4rem;
+	bottom: 2rem;
+	background: rgba(249, 115, 22, 0.4);
+}
+
+body::after {
+	width: 19rem;
+	height: 19rem;
+	left: -6rem;
+	top: 25%;
+	background: rgba(45, 212, 191, 0.3);
+}
+
+#root {
+	min-height: 100vh;
+}
+
+::selection {
+	background: rgba(249, 115, 22, 0.25);
+}
+
+@layer components {
+	.font-display {
+		font-family: 'Fraunces', serif;
+	}
+
+	.panel-surface {
+		@apply rounded-3xl border border-white/70 bg-white/75 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] backdrop-blur-xl;
+	}
+
+	.input-field {
+		@apply w-full rounded-2xl border border-slate-300/70 bg-white/85 px-4 py-3 text-slate-800 outline-none transition duration-200 placeholder:text-slate-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-200;
+	}
+
+	.textarea-field {
+		@apply input-field min-h-28 resize-y;
+	}
+
+	.primary-btn {
+		@apply inline-flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.secondary-btn {
+		@apply inline-flex items-center justify-center rounded-2xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.ghost-btn {
+		@apply inline-flex items-center justify-center rounded-2xl border border-slate-300/80 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:bg-white;
+	}
+
+	.danger-btn {
+		@apply inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition duration-200 hover:bg-rose-100;
+	}
+
+	.status-banner {
+		@apply rounded-2xl border px-4 py-3 text-sm font-medium;
+	}
+
+	.status-error {
+		@apply border-rose-200 bg-rose-50 text-rose-700;
+	}
+
+	.status-success {
+		@apply border-emerald-200 bg-emerald-50 text-emerald-700;
+	}
+}
+
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(22px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes drift {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0) scale(1);
+	}
+
+	50% {
+		transform: translate3d(0, -14px, 0) scale(1.03);
+	}
+}
+
+.reveal-up {
+	animation: fade-up 0.62s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.float-slow {
+	animation: drift 13s ease-in-out infinite;
+}
