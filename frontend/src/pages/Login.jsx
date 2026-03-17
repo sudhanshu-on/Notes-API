@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import API from '../api/axios';
+import { useNavigate } from 'react-router-dom';
+
+const navigate = useNavigate();
 
 function Login() {
   const [loading, setLoading] = useState(false);
@@ -13,7 +16,7 @@ function Login() {
       setLoading(true);
       const { data } = await API.post('/auth/login', { email, password });
       localStorage.setItem('token', data.data.token); // Store the JWT
-         window.location.href = '/dashboard'; // Redirect to dashboard
+      navigate('/dashboard'); // Redirect to dashboard
     } catch (err) {
       alert('Login failed');
     } finally {
