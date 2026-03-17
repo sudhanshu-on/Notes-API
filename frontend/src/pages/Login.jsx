@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const registrationSuccess = location.state?.registered;
+  const registeredEmail = location.state?.email;
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -118,10 +121,22 @@ function Login() {
             </div>
 
             {error ? <div className="status-banner status-error">{error}</div> : null}
+            {registrationSuccess ? (
+              <div className="status-banner status-success">
+                Account created{registeredEmail ? ` for ${registeredEmail}` : ''}. Please log in.
+              </div>
+            ) : null}
 
             <button type="submit" className="primary-btn w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Login to Dashboard'}
             </button>
+
+            <p className="pt-2 text-center text-sm text-slate-600">
+              New here?{' '}
+              <Link to="/register" className="font-semibold text-teal-700 hover:text-teal-800">
+                Create an account
+              </Link>
+            </p>
           </form>
         </section>
       </div>
