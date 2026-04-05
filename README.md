@@ -15,7 +15,7 @@ Tech Stack
 - Node.js
 - Express
 - MongoDB
-- Mongoose
+- React + Vite
 
 Environment
 - `TRUST_PROXY` (optional): Express trust proxy setting used for accurate client IP detection behind proxies/load balancers.
