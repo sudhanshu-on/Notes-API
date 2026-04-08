@@ -1,6 +1,6 @@
 # Notes API
 
-Backend API for managing notes with authentication.
+Backend API for managing notes.
 
 Features
 - JWT authentication
